@@ -79,43 +79,55 @@ class UNAlgebra:
         measured_result = self.measured_pair.add(other.measured_pair)
         return UNAlgebra(actual_result, measured_result)
     
-    def multiply(self, other: 'UNAlgebra') -> 'UNAlgebra':
+    def multiply(self, other: 'UNAlgebra', lam: float = 1.0) -> 'UNAlgebra':
         """
-        U/N Multiplication (Definition 4):
-        Multiply each nested pair, including quadratic uncertainty terms.
+        U/N Multiplication (Definition 4) - Interval-exact with λ parameter.
 
-        Result:
-        - n_a_result = n_a1 * n_a2
-        - u_t_result = |n_a1|u_t2 + |n_a2|u_t1 + cross-terms + quadratic terms
-        - n_m_result = n_m1 * n_m2
-        - u_m_result = |n_m1|u_m2 + |n_m2|u_m1 + u_m1*u_m2
+        Implements uncertainty-first multiplication with epistemic cross-tier guard.
+
+        Parameters:
+            lam (float): Quadratic uncertainty coefficient
+                - λ=1.0 (default): Interval-exact, conservative (recommended)
+                - λ=0.0: Linear-only, SSOPT N/U compatibility mode
+
+        Formula (λ=1):
+            u_t = |n_a1|u_t2 + |n_a2|u_t1 + λu_t1u_t2
+                + |n_m1|u_t2 + |n_m2|u_t1 + λ(u_t1u_m2 + u_m1u_t2)
+            u_m = |n_m1|u_m2 + |n_m2|u_m1 + λu_m1u_m2
+
+        The tier terms (first line each) are symmetric-interval products.
+        The cross-tier guard (second line for u_t) preserves triangle inequality
+        through products: |n_m⋆ - n_a⋆| ≤ u_t⋆ + u_m⋆.
         """
-        # Actual multiplication (linear terms)
+        # Nominals
         n_a_result = self.actual_pair.n * other.actual_pair.n
-        u_t_linear = (abs(self.actual_pair.n) * other.actual_pair.u +
-                      abs(other.actual_pair.n) * self.actual_pair.u)
-
-        # Measured multiplication (linear terms)
         n_m_result = self.measured_pair.n * other.measured_pair.n
-        u_m_linear = (abs(self.measured_pair.n) * other.measured_pair.u +
-                      abs(other.measured_pair.n) * self.measured_pair.u)
 
-        # Cross-terms (|n_m| with u_t, |n_a| with u_m)
-        cross_terms = (abs(self.measured_pair.n) * other.actual_pair.u +
-                       abs(other.measured_pair.n) * self.actual_pair.u)
+        # Actual tier: linear terms
+        u_t_tier = (abs(self.actual_pair.n) * other.actual_pair.u +
+                    abs(other.actual_pair.n) * self.actual_pair.u)
 
-        # Quadratic uncertainty terms (for conservativity)
-        quad_u_t = self.actual_pair.u * other.actual_pair.u
-        quad_u_m = self.measured_pair.u * other.measured_pair.u
-        quad_mixed = (self.actual_pair.u * other.measured_pair.u +
-                      self.measured_pair.u * other.actual_pair.u)
+        # Measured tier: linear terms
+        u_m_tier = (abs(self.measured_pair.n) * other.measured_pair.u +
+                    abs(other.measured_pair.n) * self.measured_pair.u)
 
-        u_t_result = u_t_linear + cross_terms + quad_u_t + quad_mixed
-        u_m_result = u_m_linear + quad_u_m
+        # Cross-tier guard: preserves |n_m - n_a| ≤ u_t + u_m through products
+        cross_linear = (abs(self.measured_pair.n) * other.actual_pair.u +
+                        abs(other.measured_pair.n) * self.actual_pair.u)
+
+        # Quadratic uncertainty terms (controlled by λ)
+        quad_u_t = lam * self.actual_pair.u * other.actual_pair.u
+        quad_u_m = lam * self.measured_pair.u * other.measured_pair.u
+        quad_cross = lam * (self.actual_pair.u * other.measured_pair.u +
+                            self.measured_pair.u * other.actual_pair.u)
+
+        # Combine: tier + cross-guard + quadratics
+        u_t_result = u_t_tier + cross_linear + quad_u_t + quad_cross
+        u_m_result = u_m_tier + quad_u_m
 
         actual_result = NUPair(n_a_result, u_t_result)
         measured_result = NUPair(n_m_result, u_m_result)
-        
+
         return UNAlgebra(actual_result, measured_result)
     
     def scale(self, a: float) -> 'UNAlgebra':
