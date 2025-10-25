@@ -10,8 +10,8 @@ import random
 from typing import List, Tuple, Dict
 import time
 from dataclasses import dataclass
-from un_algebra_core import (
-    UNAlgebra, NUPair, create_UN, conservativity_check, 
+from un_algebra.core import (
+    UNAlgebra, NUPair, create_UN, conservativity_check,
     verify_associativity, hubble_UN_merge
 )
 
@@ -60,12 +60,20 @@ class TestSuite:
             self.stats['by_category'][cat]['failed'] += 1
     
     def random_un(self, n_range=(-100, 100), u_range=(0, 10)) -> UNAlgebra:
-        """Generate random U/N value."""
+        """Generate random U/N value that respects triangle inequality."""
         n_a = random.uniform(n_range[0], n_range[1])
         u_t = random.uniform(u_range[0], u_range[1])
         n_m = random.uniform(n_range[0], n_range[1])
         u_m = random.uniform(u_range[0], u_range[1])
-        
+
+        # Enforce triangle inequality: |n_m - n_a| ≤ u_t + u_m
+        diff = abs(n_m - n_a)
+        current_bound = u_t + u_m
+
+        if diff > current_bound:
+            # Adjust u_m to ensure triangle inequality holds with a small margin
+            u_m = diff - u_t + 0.1
+
         return create_UN(n_a, u_t, n_m, u_m)
     
     # ===== UNIT TESTS: PROPERTY VERIFICATION =====

@@ -1,0 +1,68 @@
+{
+  "timestamp": "2025-10-24T23:04:21.623237",
+  "total_tests": 12,
+  "passed": 12,
+  "failed": 0,
+  "success_rate": 100.0,
+  "runtime_seconds": 0.5,
+  "categories": {
+    "Fuzz": {
+      "passed": 1,
+      "total": 1,
+      "failed": 0,
+      "success_rate": 100.0
+    },
+    "Interval": {
+      "passed": 1,
+      "total": 1,
+      "failed": 0,
+      "success_rate": 100.0
+    },
+    "Operators": {
+      "passed": 2,
+      "total": 2,
+      "failed": 0,
+      "success_rate": 100.0
+    },
+    "Projection": {
+      "passed": 1,
+      "total": 1,
+      "failed": 0,
+      "success_rate": 100.0
+    },
+    "Scenario": {
+      "passed": 1,
+      "total": 1,
+      "failed": 0,
+      "success_rate": 100.0
+    },
+    "Unit": {
+      "passed": 6,
+      "total": 6,
+      "failed": 0,
+      "success_rate": 100.0
+    }
+  },
+  "pac_confidence": {
+    "epsilon_0.0001": {
+      "epsilon": 0.0001,
+      "probability_bound": "0.9999999400",
+      "interpretation": "P(true_error > 0.0001) < 0.9999999400"
+    },
+    "epsilon_0.001": {
+      "epsilon": 0.001,
+      "probability_bound": "0.9999940000",
+      "interpretation": "P(true_error > 0.001) < 0.9999940000"
+    },
+    "epsilon_0.01": {
+      "epsilon": 0.01,
+      "probability_bound": "0.9994001800",
+      "interpretation": "P(true_error > 0.01) < 0.9994001800"
+    },
+    "epsilon_0.05": {
+      "epsilon": 0.05,
+      "probability_bound": "0.9851119396",
+      "interpretation": "P(true_error > 0.05) < 0.9851119396"
+    }
+  }
+}

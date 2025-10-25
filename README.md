@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey)](LICENSE)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/Tests-102k%20passed-success)](validation/PHASE_3_VALIDATION_REPORT.md)
+[![Version](https://img.shields.io/badge/Version-1.0.0--beta-blue)](VERSION)
 
 ## Overview
 

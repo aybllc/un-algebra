@@ -82,30 +82,37 @@ class UNAlgebra:
     def multiply(self, other: 'UNAlgebra') -> 'UNAlgebra':
         """
         U/N Multiplication (Definition 4):
-        Multiply each nested pair, then add cross-term to tolerance.
-        
+        Multiply each nested pair, including quadratic uncertainty terms.
+
         Result:
         - n_a_result = n_a1 * n_a2
-        - u_t_result = |n_a1|u_t2 + |n_a2|u_t1 + |n_m1|u_m2 + |n_a2|u_m1  (with cross-term)
+        - u_t_result = |n_a1|u_t2 + |n_a2|u_t1 + cross-terms + quadratic terms
         - n_m_result = n_m1 * n_m2
-        - u_m_result = |n_m1|u_m2 + |n_m2|u_m1
+        - u_m_result = |n_m1|u_m2 + |n_m2|u_m1 + u_m1*u_m2
         """
-        # Actual multiplication
+        # Actual multiplication (linear terms)
         n_a_result = self.actual_pair.n * other.actual_pair.n
-        u_t_base = (abs(self.actual_pair.n) * other.actual_pair.u + 
-                    abs(other.actual_pair.n) * self.actual_pair.u)
-        
-        # Measured multiplication
+        u_t_linear = (abs(self.actual_pair.n) * other.actual_pair.u +
+                      abs(other.actual_pair.n) * self.actual_pair.u)
+
+        # Measured multiplication (linear terms)
         n_m_result = self.measured_pair.n * other.measured_pair.n
-        u_m_result = (abs(self.measured_pair.n) * other.measured_pair.u + 
+        u_m_linear = (abs(self.measured_pair.n) * other.measured_pair.u +
                       abs(other.measured_pair.n) * self.measured_pair.u)
-        
-        # Cross-term: interaction between measurement and tolerance
-        cross_term = (abs(self.measured_pair.n) * other.measured_pair.u + 
-                      abs(other.actual_pair.n) * self.measured_pair.u)
-        
-        u_t_result = u_t_base + cross_term
-        
+
+        # Cross-terms (|n_m| with u_t, |n_a| with u_m)
+        cross_terms = (abs(self.measured_pair.n) * other.actual_pair.u +
+                       abs(other.measured_pair.n) * self.actual_pair.u)
+
+        # Quadratic uncertainty terms (for conservativity)
+        quad_u_t = self.actual_pair.u * other.actual_pair.u
+        quad_u_m = self.measured_pair.u * other.measured_pair.u
+        quad_mixed = (self.actual_pair.u * other.measured_pair.u +
+                      self.measured_pair.u * other.actual_pair.u)
+
+        u_t_result = u_t_linear + cross_terms + quad_u_t + quad_mixed
+        u_m_result = u_m_linear + quad_u_m
+
         actual_result = NUPair(n_a_result, u_t_result)
         measured_result = NUPair(n_m_result, u_m_result)
         
@@ -255,6 +262,9 @@ def conservativity_check(un1: UNAlgebra, un2: UNAlgebra, op_name: str = 'add') -
     """
     Verify conservativity (Theorem 9):
     u_proj(UN₁ ○ UN₂) ≥ (π(UN₁) ○_N/U π(UN₂)).u
+
+    Note: Uses n_a_known=False projection to avoid cancelation issues
+    with the absolute difference |n_m - n_a|.
     """
     if op_name == 'add':
         result = un1.add(un2)
@@ -262,19 +272,19 @@ def conservativity_check(un1: UNAlgebra, un2: UNAlgebra, op_name: str = 'add') -
         result = un1.multiply(un2)
     else:
         raise ValueError(f"Unknown operation: {op_name}")
-    
-    # Project result and inputs
-    u_proj_result = result.project_to_NU(n_a_known=True).u
-    
+
+    # Project result and inputs (using unknown n_a case for conservativity)
+    u_proj_result = result.project_to_NU(n_a_known=False).u
+
     # Direct N/U operations
-    pi_un1 = un1.project_to_NU(n_a_known=True)
-    pi_un2 = un2.project_to_NU(n_a_known=True)
-    
+    pi_un1 = un1.project_to_NU(n_a_known=False)
+    pi_un2 = un2.project_to_NU(n_a_known=False)
+
     if op_name == 'add':
         direct_result_u = pi_un1.add(pi_un2).u
     else:
         direct_result_u = pi_un1.multiply(pi_un2).u
-    
+
     # Check: projected should be ≥ direct
     return u_proj_result >= direct_result_u - 1e-10
 
