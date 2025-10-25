@@ -149,43 +149,60 @@ un_add <- function(un1, un2) {
   return(un_add(x, y))
 }
 
-#' U/N Multiplication
+#' U/N Multiplication (Interval-Exact with λ Parameter)
 #'
-#' Multiply each nested pair, then add cross-term to tolerance.
+#' U/N multiplication with uncertainty-first propagation and cross-tier guard.
 #'
 #' @param un1 First U/N value
 #' @param un2 Second U/N value
+#' @param lam Lambda parameter controlling quadratic uncertainty terms (default 1.0)
+#'   - λ=1.0 (default): Interval-exact, includes u×u quadratic terms (recommended)
+#'   - λ=0.0: Linear-only, N/U compatibility mode
 #'
 #' @return Result U/N value
 #'
+#' @details
+#' Canonical formula (λ=1):
+#'   u_t = |n_a1|u_t2 + |n_a2|u_t1 + λu_t1u_t2              [tier terms]
+#'       + |n_m1|u_t2 + |n_m2|u_t1 + λ(u_t1u_m2 + u_m1u_t2) [cross-tier guard]
+#'   u_m = |n_m1|u_m2 + |n_m2|u_m1 + λu_m1u_m2              [tier terms]
+#'
 #' @export
-un_multiply <- function(un1, un2) {
+un_multiply <- function(un1, un2, lam = 1.0) {
   if (!inherits(un1, "UNAlgebra") || !inherits(un2, "UNAlgebra")) {
     stop("Both arguments must be UNAlgebra objects")
   }
-  
+
   n_a1 <- un1$actual_pair$n
   u_t1 <- un1$actual_pair$u
   n_m1 <- un1$measured_pair$n
   u_m1 <- un1$measured_pair$u
-  
+
   n_a2 <- un2$actual_pair$n
   u_t2 <- un2$actual_pair$u
   n_m2 <- un2$measured_pair$n
   u_m2 <- un2$measured_pair$u
-  
-  # Actual multiplication
+
+  # Nominals
   n_a_result <- n_a1 * n_a2
-  u_t_base <- abs(n_a1) * u_t2 + abs(n_a2) * u_t1
-  
-  # Measured multiplication
   n_m_result <- n_m1 * n_m2
-  u_m_result <- abs(n_m1) * u_m2 + abs(n_m2) * u_m1
-  
-  # Cross-term
-  cross_term <- abs(n_m1) * u_m2 + abs(n_a2) * u_m1
-  u_t_result <- u_t_base + cross_term
-  
+
+  # Tier terms (within-frame propagation)
+  u_t_tier <- abs(n_a1) * u_t2 + abs(n_a2) * u_t1
+  u_m_tier <- abs(n_m1) * u_m2 + abs(n_m2) * u_m1
+
+  # Cross-tier guard (epistemic coupling)
+  cross_linear <- abs(n_m1) * u_t2 + abs(n_m2) * u_t1
+
+  # Quadratic terms (controlled by λ)
+  quad_u_t <- lam * u_t1 * u_t2
+  quad_u_m <- lam * u_m1 * u_m2
+  quad_cross <- lam * (u_t1 * u_m2 + u_m1 * u_t2)
+
+  # Combine: tier + cross-guard + quadratics
+  u_t_result <- u_t_tier + cross_linear + quad_u_t + quad_cross
+  u_m_result <- u_m_tier + quad_u_m
+
   obj <- list(
     actual_pair = NUPair(n_a_result, u_t_result),
     measured_pair = NUPair(n_m_result, u_m_result)
