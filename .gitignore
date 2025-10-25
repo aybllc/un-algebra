@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.Python
+*.so
+*.egg-info/
+.pytest_cache/
+.coverage
+.Rhistory
+.DS_Store
+validation/phase_3_results/*.csv
