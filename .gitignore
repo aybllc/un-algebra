@@ -9,3 +9,4 @@ __pycache__/
 .DS_Store
 validation/phase_3_results/*.csv
 xyz/
+research/
