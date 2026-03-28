@@ -2,7 +2,7 @@
   "title": "U/N Algebra: Dual Reference Frame Uncertainty Quantification Framework",
   "upload_type": "software",
   "description": "Complete implementation of U/N Algebra with dual reference frame uncertainty quantification. Includes Python and R implementations with 102,000+ test cases, formal SSOPT specification, and proven PAC-style coverage guarantees. Complementary to N/U Algebra for handling second-order uncertainty in measurement vs. actual value contexts.",
-  "creators": [{"name": "Martin, Eric D."}],
+  "creators": [{"name": "Martin, Eric D.", "affiliation": "All Your Baseline LLC", "orcid": "0009-0006-5944-1742"}],
   "keywords": [
     "uncertainty-quantification",
     "dual-reference-frame",
